@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = "http://localhost:3000";
+const SOCKET_URL = "https://chat-backend-f6vg.onrender.com";
 
 let socket: Socket | null = null;
 

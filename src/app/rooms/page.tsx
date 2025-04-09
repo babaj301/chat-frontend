@@ -61,7 +61,9 @@ export default function RoomsPage() {
     const fetchRooms = async () => {
       try {
         addDebugLog("Fetching rooms...");
-        const response = await fetch("http://localhost:4000/rooms");
+        const response = await fetch(
+          "https://chat-backend-f6vg.onrender.com/rooms"
+        );
         if (!response.ok) {
           throw new Error(`Failed to fetch rooms: ${response.status}`);
         }
