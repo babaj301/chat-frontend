@@ -452,7 +452,7 @@ export default function RoomsPage() {
                         msg.isSystem
                           ? "bg-black text-center italic"
                           : msg.isAdmin
-                          ? "bg-blue-500 border ml-auto max-w-[50%] border-blue-300"
+                          ? "bg-blue-500 border mr-auto max-w-[50%] border-blue-300"
                           : msg.userId === userId
                           ? "bg-black border border-white max-w-[80%]"
                           : "bg-black border border-white max-w-[80%]"
