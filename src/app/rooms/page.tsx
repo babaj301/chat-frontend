@@ -183,17 +183,20 @@ export default function RoomsPage() {
       // addDebugLog(
       //   `Attempting login for ${username}${loginAsAdmin ? " as admin" : ""}...`
       // );
-      const response = await fetch("http://localhost:4000/users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: username,
-          isAdmin: loginAsAdmin,
-          adminPassword: loginAsAdmin ? adminPassword : undefined,
-        }),
-      });
+      const response = await fetch(
+        "https://chat-backend-f6vg.onrender.com/users",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: username,
+            isAdmin: loginAsAdmin,
+            adminPassword: loginAsAdmin ? adminPassword : undefined,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`Failed to login: ${response.status}`);
