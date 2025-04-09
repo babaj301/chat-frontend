@@ -157,7 +157,7 @@ export default function RoomsPage() {
       socket.off("roomCreationSuccess");
       socket.off("error");
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, username, joinedRooms]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -551,8 +551,8 @@ export default function RoomsPage() {
           <div className='bg-white p-6 text-blacks rounded-lg shadow-lg max-w-md w-full'>
             <h3 className='text-lg font-semibold text-black mb-4'>Join Room</h3>
             <p className='mb-4 text-black'>
-              Do you want to join "
-              {rooms.find((r) => r.id === pendingRoomJoin)?.name}"?
+              Do you want to join
+              {rooms.find((r) => r.id === pendingRoomJoin)?.name}?
             </p>
             <div className='flex justify-end gap-2'>
               <button

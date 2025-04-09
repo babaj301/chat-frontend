@@ -11,7 +11,7 @@ const SocketContext = createContext<{
   socket: null,
   isConnected: false,
 });
-export function SocketProvider({ children }) {
+export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<Socket<
     DefaultEventsMap,
     DefaultEventsMap
