@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSocket } from "../../context/SocketContext";
+import Logo from "../chatty-logo.png";
+import Image from "next/image";
+import { MdDeleteOutline } from "react-icons/md";
 
 interface Room {
   id: string;
@@ -46,7 +49,14 @@ export default function RoomsPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [showAdminFields, setShowAdminFields] = useState(false);
   // Track rooms that user has already joined
-  const [joinedRooms, setJoinedRooms] = useState<Set<string>>(new Set());
+  const [joinedRooms, setJoinedRooms] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      const savedRooms = localStorage.getItem("joinedRooms");
+      return savedRooms ? new Set(JSON.parse(savedRooms)) : new Set();
+    }
+    return new Set();
+  });
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const addDebugLog = (message: string) => {
@@ -56,6 +66,30 @@ export default function RoomsPage() {
     ]);
   };
 
+  // Update localStorage when joinedRooms changes
+  useEffect(() => {
+    if (userId && joinedRooms.size > 0) {
+      localStorage.setItem(
+        `joinedRooms_${userId}`,
+        JSON.stringify([...joinedRooms])
+      );
+    }
+  }, [joinedRooms, userId]);
+
+  // Load user's joined rooms from localStorage after login
+  useEffect(() => {
+    if (userId && typeof window !== "undefined") {
+      const savedRooms = localStorage.getItem(`joinedRooms_${userId}`);
+      if (savedRooms) {
+        setJoinedRooms(new Set(JSON.parse(savedRooms)));
+        addDebugLog(
+          `Loaded ${
+            JSON.parse(savedRooms).length
+          } previously joined rooms from storage`
+        );
+      }
+    }
+  }, [userId]);
   // Fetch rooms from API
   useEffect(() => {
     const fetchRooms = async () => {
@@ -129,6 +163,12 @@ export default function RoomsPage() {
       setMessages((prev) => [...prev, message]);
     });
 
+    // For deleted message emitting
+    socket.on("messageDeleted", ({ messageId }) => {
+      addDebugLog(`Message deleted: ${messageId}`);
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    });
+
     socket.on("roomCreated", (room) => {
       addDebugLog(`New room created: ${room.name}`);
       setRooms((prev) => [room, ...prev]);
@@ -156,6 +196,7 @@ export default function RoomsPage() {
       socket.off("roomJoined");
       socket.off("newMessage");
       socket.off("roomCreated");
+      socket.off("messageDeleted");
       socket.off("roomCreationSuccess");
       socket.off("error");
     };
@@ -221,6 +262,20 @@ export default function RoomsPage() {
       );
       alert("Failed to login. Please try again.");
     }
+  };
+
+  // Delete Message handler
+  const handleDeleteMessage = (messageId: string) => {
+    if (!socket || !userId) {
+      addDebugLog("Cannot delete message: Missing required data");
+      return;
+    }
+
+    addDebugLog(`Deleting message ${messageId}...`);
+    socket.emit("deleteMessage", {
+      messageId: messageId,
+      userId: userId,
+    });
   };
 
   // Room handlers
@@ -330,11 +385,12 @@ export default function RoomsPage() {
   // Login form
   if (!isLoggedIn) {
     return (
-      <div className='flex flex-col items-center justify-center min-h-screen p-6'>
-        <h1 className='text-2xl font-bold mb-6'>Chat Login</h1>
+      <div className='flex bg-white flex-col items-center justify-center text-black min-h-screen p-6'>
+        <Image className='w-30' src={Logo} alt='' />
+
         <div className='w-full max-w-md'>
           <div className='mb-4'>
-            <label className='block text-sm font-medium mb-1'>Username</label>
+            <label className='block text-base font-medium mb-1'>Username</label>
             <input
               type='text'
               value={username}
@@ -383,10 +439,10 @@ export default function RoomsPage() {
   }
 
   return (
-    <div className='p-6'>
+    <div className='p-6 bg-white text-black'>
       {/* Header */}
       <div className='mb-4 flex justify-between items-center'>
-        <h1 className='text-2xl font-bold'>Chat Rooms</h1>
+        <Image className='w-30' src={Logo} alt='' />
         <div className='text-sm'>
           <span
             className={`inline-block h-2 w-2 rounded-full mr-1 ${
@@ -403,13 +459,13 @@ export default function RoomsPage() {
         {/* Rooms List */}
         <div className='md:col-span-1 gap-4'>
           <h2 className='text-lg font-semibold mb-2'>Available Rooms</h2>
-          <ul className='border rounded overflow-hidden'>
+          <ul className='border rounded-md overflow-hidden'>
             {rooms.length > 0 ? (
               rooms.map((room) => (
                 <li
                   key={room.id}
-                  className={`p-3 border-b cursor-pointer hover:bg-white hover:text-black ${
-                    selectedRoom === room.id ? "bg-gray-600 text-white" : ""
+                  className={`p-3 border-b cursor-pointer hover:bg-blue-400 hover:text-white ${
+                    selectedRoom === room.id ? "bg-blue-500 text-white" : ""
                   }`}
                   onClick={() => handleRoomClick(room.id)}
                 >
@@ -420,7 +476,7 @@ export default function RoomsPage() {
                   {!isAdmin &&
                     joinedRooms.has(room.id) &&
                     room.adminId !== userId && (
-                      <span className='ml-2 text-xs text-green-500'>
+                      <span className='ml-2 text-xs text-green-700'>
                         (Joined)
                       </span>
                     )}
@@ -455,12 +511,12 @@ export default function RoomsPage() {
                       key={msg.id}
                       className={`p-2 mb-2 rounded ${
                         msg.isSystem
-                          ? "bg-black text-center italic"
+                          ? " text-center text-black italic"
                           : msg.isAdmin
-                          ? "bg-blue-500 border mr-auto max-w-[50%] border-blue-300"
+                          ? " border ml-auto max-w-[100%] border-blue-300"
                           : msg.userId === userId
-                          ? "bg-black border border-white max-w-[80%]"
-                          : "bg-black border border-white max-w-[80%]"
+                          ? "text-black border border-black max-w-[100%]"
+                          : "text-black border border-black max-w-[100%]"
                       }`}
                     >
                       {!msg.isSystem && (
@@ -474,7 +530,21 @@ export default function RoomsPage() {
                         </div>
                       )}
 
-                      <div>{msg.text}</div>
+                      <div className='flex justify-between'>
+                        {msg.text}{" "}
+                        {(msg.userId === userId ||
+                          isAdmin ||
+                          rooms.find((r) => r.id === selectedRoom)?.adminId ===
+                            userId) &&
+                          !msg.isSystem && (
+                            <button
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className=''
+                            >
+                              <MdDeleteOutline />
+                            </button>
+                          )}
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -538,7 +608,7 @@ export default function RoomsPage() {
         </div>
 
         {/* Debug Log */}
-        <div className='md:col-span-1'>
+        <div className='md:col-span-1 h-[80vh]'>
           <h2 className='text-lg font-semibold mb-2'>Debug Log</h2>
           <div className='border rounded h-80 overflow-y-auto p-2 text-xs font-mono'>
             {debugLog.map((log, idx) => (
@@ -552,16 +622,16 @@ export default function RoomsPage() {
 
       {/* Join Room Modal - Only shown for non-admin users joining a room for the first time */}
       {showJoinModal && !isAdmin && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+        <div className='fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50'>
           <div className='bg-white p-6 text-blacks rounded-lg shadow-lg max-w-md w-full'>
-            <h3 className='text-lg font-semibold text-black mb-4'>Join Room</h3>
-            <p className='mb-4 text-black'>
-              Do you want to join
+            <h3 className='text-lg font-semibold text-black mb-2'>Join Room</h3>
+            <p className='mb-2 text-black'>
+              Do you want to join{" "}
               {rooms.find((r) => r.id === pendingRoomJoin)?.name}?
             </p>
             <div className='flex justify-end gap-2'>
               <button
-                className='px-4 py-2 bg-red-400 text-white rounded'
+                className='px-4 py-2 border-red-700 text-black rounded'
                 onClick={cancelJoinRoom}
               >
                 Cancel
