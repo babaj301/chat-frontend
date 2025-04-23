@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, ChangeEvent, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSocket } from "../../context/SocketContext";
 import Logo from "../chatty-logo.png";
 import Image from "next/image";
-import axios from "axios";
 import { MdDeleteOutline } from "react-icons/md";
 
 interface Room {
