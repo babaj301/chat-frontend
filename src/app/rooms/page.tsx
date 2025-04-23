@@ -97,7 +97,7 @@ export default function RoomsPage() {
       try {
         addDebugLog("Fetching rooms...");
         const response = await fetch(
-          "https://chat-backend-8gc5.onrender.com/rooms"
+          `https://chat-backend-gqqw.onrender.com/rooms`
         );
         if (!response.ok) {
           throw new Error(`Failed to fetch rooms: ${response.status}`);
@@ -226,7 +226,7 @@ export default function RoomsPage() {
       //   `Attempting login for ${username}${loginAsAdmin ? " as admin" : ""}...`
       // );
       const response = await fetch(
-        "https://chat-backend-8gc5.onrender.com/users",
+        "https://chat-backend-gqqw.onrender.com/users",
         {
           method: "POST",
           headers: {

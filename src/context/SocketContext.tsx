@@ -20,7 +20,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Create socket connection
-    const socketInstance = io("https://chat-backend-f6vg.onrender.com", {
+    const socketInstance = io("https://chat-backend-gqqw.onrender.com", {
       reconnectionDelayMax: 10000,
     });
 
