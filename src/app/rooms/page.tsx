@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, ChangeEvent, useEffect, useRef } from "react";
 import { useSocket } from "../../context/SocketContext";
 import Logo from "../chatty-logo.png";
 import Image from "next/image";
+import axios from "axios";
 import { MdDeleteOutline } from "react-icons/md";
 
 interface Room {
@@ -48,6 +49,9 @@ export default function RoomsPage() {
   const [loginAsAdmin, setLoginAsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [showAdminFields, setShowAdminFields] = useState(false);
+  const [picFile, setPicFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
   // Track rooms that user has already joined
   const [joinedRooms, setJoinedRooms] = useState<Set<string>>(() => {
     if (typeof window !== "undefined") {
@@ -261,6 +265,42 @@ export default function RoomsPage() {
         `Login error: ${error instanceof Error ? error.message : String(error)}`
       );
       alert("Failed to login. Please try again.");
+    }
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setPicFile(file);
+  };
+
+  const handleUpload = async () => {
+    if (!picFile) {
+      alert("Please select a file to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", picFile);
+    formData.append("userId", userId);
+    formData.append("roomId", selectedRoom || "");
+
+    try {
+      setUploading(true);
+      const res = await axios.post(
+        "https://chat-backend-f6vg.onrender.com/upload",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log("upload succesful", res.data);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    } finally {
+      setUploading(false);
+      setPicFile(null);
     }
   };
 
@@ -575,18 +615,35 @@ export default function RoomsPage() {
                     </div>
                   )}
                 <div className='flex gap-2'>
-                  <input
-                    type='text'
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                    className={`border p-2 rounded flex-1 ${
-                      isAdmin || isAdminMessage ? "border-red-400" : ""
-                    }`}
-                    placeholder={`Type a message${
-                      isAdmin ? " as Admin" : ""
-                    }...`}
-                  />
+                  <div>
+                    <input
+                      type='text'
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                      className={`border p-2 rounded flex-1 ${
+                        isAdmin || isAdminMessage ? "border-red-400" : ""
+                      }`}
+                      placeholder={`Type a message${
+                        isAdmin ? " as Admin" : ""
+                      }...`}
+                    />
+
+                    <div>
+                      <input
+                        type='file'
+                        accept='image/*'
+                        onChange={handleFileChange}
+                      />
+                      <button
+                        className='px-2 py-2 rounded bg-blue-500 text-white'
+                        onClick={handleUpload}
+                        disabled={!picFile || uploading}
+                      >
+                        {uploading ? "Uploading..." : "Send Image"}
+                      </button>
+                    </div>
+                  </div>
                   <button
                     onClick={sendMessage}
                     className={`px-4 py-2 rounded ${
