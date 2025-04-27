@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSocket } from "../../context/SocketContext";
+import { Socket } from "socket.io-client";
 import Logo from "../chatty-logo.png";
 import Image from "next/image";
-import { MdDeleteOutline } from "react-icons/md";
+import { MdDeleteOutline, MdImage } from "react-icons/md";
 
 interface Room {
   id: string;
@@ -27,7 +28,119 @@ interface Message {
   isAdmin?: boolean;
   user?: User;
   createdAt: string;
+  audioUrl?: string;
 }
+
+// Add VoiceMessage component
+const VoiceMessage = ({
+  socket,
+  selectedRoom,
+  userId,
+  isAdmin,
+  isAdminMessage,
+}: {
+  socket: Socket;
+  selectedRoom: string | null;
+  userId: string;
+  isAdmin: boolean;
+  isAdminMessage: boolean;
+}) => {
+  const [recording, setRecording] = useState(false);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder.current = new MediaRecorder(stream);
+      audioChunks.current = [];
+
+      mediaRecorder.current.ondataavailable = (event) => {
+        audioChunks.current.push(event.data);
+      };
+
+      mediaRecorder.current.start();
+      setRecording(true);
+    } catch (error) {
+      console.error("Microphone access error:", error);
+      alert("Error accessing microphone. Please check your permissions.");
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!mediaRecorder.current) return;
+
+    return new Promise<void>((resolve) => {
+      mediaRecorder.current!.onstop = async () => {
+        const audioBlob = new Blob(audioChunks.current, { type: "audio/mp3" });
+        const formData = new FormData();
+        formData.append("audio", audioBlob);
+
+        try {
+          const response = await fetch(
+            "https://chat-backend-gqqw.onrender.com/upload-audio",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+          if (response.ok) {
+            const { audioUrl } = await response.json();
+            socket?.emit("sendMessage", {
+              roomId: selectedRoom,
+              userId,
+              text: `[Audio](${audioUrl})`,
+              isAdmin: isAdmin ? true : isAdminMessage,
+            });
+          }
+        } catch (error) {
+          console.error("Voice message upload error:", error);
+          alert("Failed to upload voice message. Please try again.");
+        }
+
+        setRecording(false);
+        resolve();
+      };
+
+      mediaRecorder.current!.stop();
+      mediaRecorder
+        .current!.stream.getTracks()
+        .forEach((track) => track.stop());
+    });
+  };
+
+  const getButtonStyle = () => {
+    if (recording) return "bg-red-500";
+    if (isAdmin || isAdminMessage) return "bg-red-500";
+    return "bg-blue-500";
+  };
+
+  return (
+    <button
+      type='button'
+      className={`p-2 rounded-full ${getButtonStyle()}`}
+      onMouseDown={startRecording}
+      onMouseUp={stopRecording}
+      onMouseLeave={stopRecording}
+      aria-label={recording ? "Stop recording" : "Start recording"}
+    >
+      <svg
+        className='w-6 h-6 text-white'
+        fill='none'
+        stroke='currentColor'
+        viewBox='0 0 24 24'
+      >
+        <path
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth={2}
+          d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z'
+        />
+      </svg>
+    </button>
+  );
+};
 
 export default function RoomsPage() {
   const { socket, isConnected } = useSocket();
@@ -383,6 +496,37 @@ export default function RoomsPage() {
     }
   };
 
+  // renderMessage function to handle audio messages
+  const renderMessage = (msg: Message) => {
+    const audioRegex = /^\[Audio\]\((.*)\)$/;
+    const imageRegex = /^\[Image\]\((.*)\)$/;
+
+    const audioMatch = audioRegex.exec(msg.text);
+    if (audioMatch) {
+      return (
+        <audio controls className='max-w-full'>
+          <source src={audioMatch[1]} type='audio/mpeg' />
+          <track kind='captions' src='' label='English' />
+        </audio>
+      );
+    }
+
+    const imageMatch = imageRegex.exec(msg.text);
+    if (imageMatch) {
+      return (
+        <Image
+          src={imageMatch[1]}
+          alt='Shared in chat'
+          width={320}
+          height={240}
+          className='max-w-xs max-h-60 rounded object-contain'
+        />
+      );
+    }
+
+    return msg.text;
+  };
+
   // Login form
   if (!isLoggedIn) {
     return (
@@ -532,7 +676,7 @@ export default function RoomsPage() {
                       )}
 
                       <div className='flex justify-between'>
-                        {msg.text}{" "}
+                        {renderMessage(msg)}{" "}
                         {(msg.userId === userId ||
                           isAdmin ||
                           rooms.find((r) => r.id === selectedRoom)?.adminId ===
@@ -558,7 +702,7 @@ export default function RoomsPage() {
 
               {/* Message Input */}
               <div className='flex flex-col gap-2'>
-                {/* Only show Send as Admin checkbox for room owners who are not admin users */}
+                {/* Admin checkbox section stays the same */}
                 {!isAdmin &&
                   rooms.find((r) => r.id === selectedRoom)?.adminId ===
                     userId && (
@@ -576,19 +720,72 @@ export default function RoomsPage() {
                     </div>
                   )}
                 <div className='flex gap-2'>
-                  <div>
+                  <div className='flex-1 flex gap-2'>
                     <input
                       type='text'
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                      className={`border p-2 rounded flex-1 ${
+                      onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                      className={`flex-1 border p-2 rounded ${
                         isAdmin || isAdminMessage ? "border-red-400" : ""
                       }`}
                       placeholder={`Type a message${
                         isAdmin ? " as Admin" : ""
                       }...`}
                     />
+
+                    {/* Image Upload Button */}
+                    <label className='cursor-pointer'>
+                      <input
+                        type='file'
+                        accept='image/*'
+                        className='hidden'
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+
+                          const formData = new FormData();
+                          formData.append("image", file);
+
+                          try {
+                            const response = await fetch(
+                              "https://chat-backend-gqqw.onrender.com/upload",
+                              {
+                                method: "POST",
+                                body: formData,
+                              }
+                            );
+
+                            if (response.ok) {
+                              const { imageUrl } = await response.json();
+                              socket?.emit("sendMessage", {
+                                roomId: selectedRoom,
+                                userId,
+                                text: `[Image](${imageUrl})`,
+                                isAdmin: isAdmin ? true : isAdminMessage,
+                              });
+                            }
+                          } catch (error) {
+                            console.error("Image upload error:", error);
+                            alert("Failed to upload image. Please try again.");
+                          }
+                        }}
+                      />
+                      <span className='bg-blue-500 text-white p-4 rounded'>
+                        <MdImage className='w-6 h-6' />
+                      </span>
+                    </label>
+
+                    {/* Voice Message Button */}
+                    {socket && (
+                      <VoiceMessage
+                        socket={socket}
+                        selectedRoom={selectedRoom}
+                        userId={userId}
+                        isAdmin={isAdmin}
+                        isAdminMessage={isAdminMessage}
+                      />
+                    )}
                   </div>
                   <button
                     onClick={sendMessage}
