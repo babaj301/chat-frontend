@@ -110,6 +110,14 @@ const VoiceMessage = ({
     });
   };
 
+  const handleToggleRecording = async () => {
+    if (recording) {
+      await stopRecording();
+    } else {
+      await startRecording();
+    }
+  };
+
   const getButtonStyle = () => {
     if (recording) return "bg-red-500";
     if (isAdmin || isAdminMessage) return "bg-red-500";
@@ -120,9 +128,7 @@ const VoiceMessage = ({
     <button
       type='button'
       className={`p-2 rounded-full ${getButtonStyle()}`}
-      onMouseDown={startRecording}
-      onMouseUp={stopRecording}
-      onMouseLeave={stopRecording}
+      onClick={handleToggleRecording}
       aria-label={recording ? "Stop recording" : "Start recording"}
     >
       <svg
