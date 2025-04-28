@@ -120,7 +120,6 @@ const VoiceMessage = ({
 
   const getButtonStyle = () => {
     if (recording) return "bg-red-500";
-    if (isAdmin || isAdminMessage) return "bg-red-500";
     return "bg-blue-500";
   };
 
@@ -249,26 +248,9 @@ export default function RoomsPage() {
     socket.on("roomJoined", (data) => {
       addDebugLog(`Joined room: ${data.room.name}`);
       addDebugLog(`Received ${data.messages.length} messages`);
-      setMessages(data?.messages);
 
-      const isFirstJoin = !joinedRooms.has(data?.rooms?.id);
-
-      // If this is the first time joining
-      if (isFirstJoin) {
-        const joinMessage: Message = {
-          id: `system-join-${Date.now()}`,
-          text: `${username} has joined the room`,
-          userId: null,
-          isSystem: true,
-          createdAt: new Date().toISOString(),
-        };
-
-        // Add the join message to the messages
-        setMessages([...data?.messages, joinMessage]);
-      } else {
-        // Just set the messages as before
-        setMessages(data?.messages);
-      }
+      // Simply set the messages without adding a new join message
+      setMessages(data.messages);
 
       // Add to joined rooms when successfully joined
       setJoinedRooms((prev) => {
@@ -726,7 +708,7 @@ export default function RoomsPage() {
                     </div>
                   )}
                 <div className='flex gap-2'>
-                  <div className='flex-1 flex gap-2'>
+                  <div className='flex-1 flex gap-2 items-center justify-center'>
                     <input
                       type='text'
                       value={messageText}
@@ -777,8 +759,8 @@ export default function RoomsPage() {
                           }
                         }}
                       />
-                      <span className='bg-blue-500 text-white p-4 rounded'>
-                        <MdImage className='w-6 h-6' />
+                      <span className='bg-blue-500 text-white w-6 h-6 rounded'>
+                        <MdImage className='w-6 h-6 bg-blue-500 text-white' />
                       </span>
                     </label>
 
@@ -795,11 +777,11 @@ export default function RoomsPage() {
                   </div>
                   <button
                     onClick={sendMessage}
-                    className={`px-4 py-2 rounded ${
+                    className={`px-2 py-2 rounded ${
                       isAdmin || isAdminMessage
                         ? "bg-red-500 text-white"
                         : "bg-blue-500 text-white"
-                    }`}
+                    } ${messageText ? "block" : "hidden"}`}
                   >
                     Send{isAdmin ? " as Admin" : ""}
                   </button>
@@ -814,7 +796,7 @@ export default function RoomsPage() {
         </div>
 
         {/* Debug Log */}
-        <div className='md:col-span-1 h-[80vh]'>
+        <div className='md:col-span-1 h-[80vh] hidden '>
           <h2 className='text-lg font-semibold mb-2'>Debug Log</h2>
           <div className='border rounded h-80 overflow-y-auto p-2 text-xs font-mono'>
             {debugLog.map((log, idx) => (
