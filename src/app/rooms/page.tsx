@@ -118,31 +118,45 @@ const VoiceMessage = ({
     }
   };
 
-  const getButtonStyle = () => {
-    if (recording) return "bg-red-500";
-    return "bg-blue-500";
-  };
+  // const getButtonStyle = () => {
+  //   if (recording) return "bg-red-500";
+  //   return "bg-blue-500";
+  // };
 
   return (
     <button
       type='button'
-      className={`p-2 rounded-full ${getButtonStyle()}`}
+      className={`p-2 rounded-full ${
+        recording ? "bg-red-500" : "bg-blue-500"
+      } transition-colors duration-200 hover:opacity-90`}
       onClick={handleToggleRecording}
       aria-label={recording ? "Stop recording" : "Start recording"}
     >
-      <svg
-        className='w-6 h-6 text-white'
-        fill='none'
-        stroke='currentColor'
-        viewBox='0 0 24 24'
-      >
-        <path
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          strokeWidth={2}
-          d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z'
-        />
-      </svg>
+      {recording ? (
+        // Stop recording icon (square)
+        <svg
+          className='w-6 h-6 text-white'
+          fill='currentColor'
+          viewBox='0 0 24 24'
+        >
+          <rect x='6' y='6' width='12' height='12' />
+        </svg>
+      ) : (
+        // Microphone icon
+        <svg
+          className='w-6 h-6 text-white'
+          fill='none'
+          stroke='currentColor'
+          viewBox='0 0 24 24'
+        >
+          <path
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            strokeWidth={2}
+            d='M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z'
+          />
+        </svg>
+      )}
     </button>
   );
 };
@@ -494,7 +508,7 @@ export default function RoomsPage() {
       return (
         <audio controls className='max-w-full'>
           <source src={audioMatch[1]} type='audio/mpeg' />
-          <track kind='captions' src='' label='English' />
+          {/* Remove the track element or provide a valid src */}
         </audio>
       );
     }
@@ -572,7 +586,7 @@ export default function RoomsPage() {
   }
 
   return (
-    <div className='p-6 bg-white text-black'>
+    <div className='p-6 bg-white text-black h-full'>
       {/* Header */}
       <div className='mb-4 flex justify-between items-center'>
         <Image className='w-30' src={Logo} alt='' />
@@ -590,71 +604,69 @@ export default function RoomsPage() {
 
       <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
         {/* Rooms List */}
-        <div className='md:col-span-1 gap-4'>
-          <h2 className='text-lg font-semibold mb-2'>Available Rooms</h2>
-          <ul className='border rounded-md overflow-hidden'>
-            {rooms.length > 0 ? (
-              rooms.map((room) => (
-                <li
-                  key={room.id}
-                  className={`p-3 border-b cursor-pointer hover:bg-blue-400 hover:text-white ${
-                    selectedRoom === room.id ? "bg-blue-500 text-white" : ""
-                  }`}
-                  onClick={() => handleRoomClick(room.id)}
-                >
-                  {room.name}
-                  {room.adminId === userId && (
-                    <span className='ml-2 text-xs'>(Owner)</span>
-                  )}
-                  {!isAdmin &&
-                    joinedRooms.has(room.id) &&
-                    room.adminId !== userId && (
-                      <span className='ml-2 text-xs text-green-700'>
-                        (Joined)
-                      </span>
-                    )}
-                </li>
-              ))
-            ) : (
-              <li className='p-3 text-gray-500'>No rooms available</li>
-            )}
-          </ul>
+        <div className='hidden md:block md:col-span-1 gap-4'>
+          <h2 className='text-2xl font-semibold mb-2'> Rooms</h2>
+          <div className='flex flex-col h-full pb-10 justify-between'>
+            <ul className='overflow-hidden'>
+              {rooms.length > 0 ? (
+                rooms.map((room) => (
+                  <li
+                    key={room.id}
+                    className={`p-2 rounded-md w-full font-medium cursor-pointer hover:bg-gray-400 hover:text-black ${
+                      selectedRoom === room.id ? "bg-gray-100 text-black" : ""
+                    }`}
+                    onClick={() => handleRoomClick(room.id)}
+                  >
+                    {room.name}{" "}
+                    {!isAdmin &&
+                      joinedRooms.has(room.id) &&
+                      room.adminId !== userId && (
+                        <span className='inline-block h-2 w-2 rounded-full mr-1 bg-green-500'></span>
+                      )}
+                  </li>
+                ))
+              ) : (
+                <li className='p-3 text-gray-500'>No rooms available</li>
+              )}
+            </ul>
 
-          <button
-            className='px-4 py-2 bg-blue-500 text-white mt-4 w-full rounded'
-            onClick={() => setShowCreateRoomModal(true)}
-          >
-            Create Room
-          </button>
+            <button
+              className='px-4 flex items-center text-white w-full rounded mt-4'
+              onClick={() => setShowCreateRoomModal(true)}
+            >
+              <span className='text-3xl text-black'>+</span>
+              <span className=' text-black ml-2'>Create Room</span>
+            </button>
+          </div>
         </div>
 
         {/* Chat Area */}
-        <div className='md:col-span-2'>
+        <div className='md:col-span-3'>
           {selectedRoom ? (
             <>
-              <h2 className='text-lg font-semibold mb-2'>
+              <h2 className='text-2xl font-medium mb-2'>
                 {rooms.find((r) => r.id === selectedRoom)?.name || "Chat"}
               </h2>
 
               {/* Messages */}
-              <div className='border rounded p-4 h-[60vh] overflow-y-auto mb-4'>
+              <div className=' p-4 h-[60vh] overflow-y-auto mb-4'>
                 {messages.length > 0 ? (
                   messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`p-2 mb-2 rounded ${
+                      className={`px-3 py-1 mb-2 rounded ${
                         msg.isSystem
-                          ? " text-center text-black italic"
+                          ? " text-center italic text-gray-500"
                           : msg.isAdmin
-                          ? " border ml-auto max-w-[100%] border-blue-300"
+                          ? " border w-fit min-w-[35%] border-blue-300"
                           : msg.userId === userId
-                          ? "text-black border border-black max-w-[100%]"
-                          : "text-black border border-black max-w-[100%]"
+                          ? "text-black bg-gray-200 w-fit min-w-[35%]"
+                          : "text-black bg-gray-200 w-fit min-w-[35%]"
                       }`}
                     >
                       {!msg.isSystem && (
                         <div className='text-xs font-semibold flex items-center'>
-                          {msg.user?.name}
+                          <span className='text-sm'> {msg.user?.name}</span>
                           {msg.isAdmin && (
                             <span className='ml-1 text-red-500 text-xs'>
                               [ADMIN]
@@ -663,7 +675,7 @@ export default function RoomsPage() {
                         </div>
                       )}
 
-                      <div className='flex justify-between'>
+                      <div className='flex pb-2 justify-between'>
                         {renderMessage(msg)}{" "}
                         {(msg.userId === userId ||
                           isAdmin ||
@@ -714,8 +726,8 @@ export default function RoomsPage() {
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                      className={`flex-1 border p-2 rounded ${
-                        isAdmin || isAdminMessage ? "border-red-400" : ""
+                      className={`flex-1 border px-2 py-1 rounded ${
+                        isAdmin || isAdminMessage ? "border-gray-600" : ""
                       }`}
                       placeholder={`Type a message${
                         isAdmin ? " as Admin" : ""
@@ -779,11 +791,11 @@ export default function RoomsPage() {
                     onClick={sendMessage}
                     className={`px-2 py-2 rounded ${
                       isAdmin || isAdminMessage
-                        ? "bg-red-500 text-white"
+                        ? "bg-blue-500 text-white"
                         : "bg-blue-500 text-white"
                     } ${messageText ? "block" : "hidden"}`}
                   >
-                    Send{isAdmin ? " as Admin" : ""}
+                    Send
                   </button>
                 </div>
               </div>
@@ -837,11 +849,11 @@ export default function RoomsPage() {
 
       {/* Create Room Modal */}
       {showCreateRoomModal && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+        <div className='fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center shadow-2xl justify-center z-50'>
           <div className='bg-white p-6 rounded-lg shadow-lg max-w-md w-full'>
             <h3 className='text-lg font-semibold mb-4'>Create New Room</h3>
             <div className='mb-4'>
-              <label className='block text-sm font-medium mb-1'>
+              <label className='block text-base font-medium mb-1'>
                 Room Name
               </label>
               <input
@@ -854,7 +866,7 @@ export default function RoomsPage() {
             </div>
             <div className='flex justify-end gap-2'>
               <button
-                className='px-4 py-2 bg-red-400 text-white rounded'
+                className='px-4 py-2 border text-black rounded'
                 onClick={() => setShowCreateRoomModal(false)}
               >
                 Cancel
