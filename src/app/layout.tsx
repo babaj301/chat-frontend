@@ -8,7 +8,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en'>
-      <body>
+      <body className='bg-white min-h-screen'>
         <SocketProvider>{children}</SocketProvider>
       </body>
     </html>

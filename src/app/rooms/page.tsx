@@ -605,7 +605,7 @@ export default function RoomsPage() {
   }
 
   return (
-    <div className='p-6 bg-white text-black h-full'>
+    <div className='p-6 bg-white text-black min-h-screen flex flex-col'>
       {/* Header */}
       <div className='mb-4 flex justify-between items-center'>
         <Image className='w-30' src={Logo} alt='' />
@@ -621,12 +621,12 @@ export default function RoomsPage() {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-6 flex-1'>
         {/* Rooms List */}
-        <div className='hidden md:block md:col-span-1 gap-4'>
-          <h2 className='text-2xl font-semibold mb-2'> Rooms</h2>
-          <div className='flex flex-col h-full pb-10 justify-between'>
-            <ul className='overflow-hidden'>
+        <div className='hidden md:block md:col-span-1 gap-4 flex flex-col h-full'>
+          <h2 className='text-2xl font-medium mb-2'> Rooms</h2>
+          <div className='flex-1 flex flex-col justify-between'>
+            <ul className='overflow-y-auto flex-1'>
               {rooms.length > 0 ? (
                 rooms.map((room) => (
                   <li
@@ -650,25 +650,25 @@ export default function RoomsPage() {
             </ul>
 
             <button
-              className='px-4 flex items-center text-white w-full rounded mt-4'
+              className='px-4 py-2 flex items-center text-black w-full rounded mt-4'
               onClick={() => setShowCreateRoomModal(true)}
             >
-              <span className='text-3xl text-black'>+</span>
-              <span className=' text-black ml-2'>Create Room</span>
+              <span className='text-3xl'>+</span>
+              <span className='ml-2'>Create Room</span>
             </button>
           </div>
         </div>
 
         {/* Chat Area */}
-        <div className='md:col-span-3'>
+        <div className='md:col-span-3 flex flex-col h-full'>
           {selectedRoom ? (
             <>
               <h2 className='text-2xl font-medium mb-2'>
                 {rooms.find((r) => r.id === selectedRoom)?.name || "Chat"}
               </h2>
 
-              {/* Messages */}
-              <div className=' p-4 h-[60vh] overflow-y-auto mb-4'>
+              {/* Messages container */}
+              <div className='flex-1 p-4 overflow-y-auto mb-4 min-h-[70vh]'>
                 {messages.length > 0 ? (
                   messages.map((msg) => (
                     <div
@@ -719,8 +719,8 @@ export default function RoomsPage() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Input */}
-              <div className='flex flex-col gap-2'>
+              {/* Message Input area */}
+              <div className='mt-auto pb-4'>
                 {/* Typing Indicator */}
                 {Object.keys(typingUsers).length > 0 && (
                   <div className='text-sm text-gray-500 italic ml-2'>
@@ -854,7 +854,7 @@ export default function RoomsPage() {
               </div>
             </>
           ) : (
-            <div className='border rounded p-10 h-[60vh] text-center text-gray-500'>
+            <div className='flex-1 border rounded p-10 flex items-center justify-center text-gray-500'>
               Select a room to start chatting
             </div>
           )}
