@@ -180,6 +180,10 @@ export default function RoomsPage() {
   const [loginAsAdmin, setLoginAsAdmin] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [showAdminFields, setShowAdminFields] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Track rooms that user has already joined
   const [joinedRooms, setJoinedRooms] = useState<Set<string>>(() => {
@@ -308,13 +312,28 @@ export default function RoomsPage() {
       alert(`Error: ${error}`);
     });
 
+    socket.on("userTyping", ({ username, isTyping }) => {
+      setTypingUsers((prev) => {
+        const newTypingUsers = { ...prev };
+        if (isTyping) {
+          newTypingUsers[username] = true;
+        } else {
+          delete newTypingUsers[username];
+        }
+        return newTypingUsers;
+      });
+    });
+
     return () => {
-      socket.off("roomJoined");
-      socket.off("newMessage");
-      socket.off("roomCreated");
-      socket.off("messageDeleted");
-      socket.off("roomCreationSuccess");
-      socket.off("error");
+      if (socket) {
+        socket.off("roomJoined");
+        socket.off("newMessage");
+        socket.off("roomCreated");
+        socket.off("messageDeleted");
+        socket.off("roomCreationSuccess");
+        socket.off("error");
+        socket.off("userTyping");
+      }
     };
   }, [socket, isConnected, username, joinedRooms]);
 
@@ -702,7 +721,16 @@ export default function RoomsPage() {
 
               {/* Message Input */}
               <div className='flex flex-col gap-2'>
-                {/* Admin checkbox section stays the same */}
+                {/* Typing Indicator */}
+                {Object.keys(typingUsers).length > 0 && (
+                  <div className='text-sm text-gray-500 italic ml-2'>
+                    {Object.keys(typingUsers).join(", ")}{" "}
+                    {Object.keys(typingUsers).length === 1 ? "is" : "are"}{" "}
+                    typing...
+                  </div>
+                )}
+
+                {/* Admin checkbox section */}
                 {!isAdmin &&
                   rooms.find((r) => r.id === selectedRoom)?.adminId ===
                     userId && (
@@ -724,7 +752,32 @@ export default function RoomsPage() {
                     <input
                       type='text'
                       value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
+                      onChange={(e) => {
+                        setMessageText(e.target.value);
+
+                        if (!socket || !selectedRoom) return;
+
+                        // Clear previous timeout
+                        if (typingTimeoutRef.current) {
+                          clearTimeout(typingTimeoutRef.current);
+                        }
+
+                        // Emit typing start
+                        socket.emit("typing", {
+                          roomId: selectedRoom,
+                          username,
+                          isTyping: true,
+                        });
+
+                        // Set timeout to stop typing
+                        typingTimeoutRef.current = setTimeout(() => {
+                          socket?.emit("typing", {
+                            roomId: selectedRoom,
+                            username,
+                            isTyping: false,
+                          });
+                        }, 2000);
+                      }}
                       onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                       className={`flex-1 border px-2 py-1 rounded ${
                         isAdmin || isAdminMessage ? "border-gray-600" : ""
