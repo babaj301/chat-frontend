@@ -623,9 +623,9 @@ export default function RoomsPage() {
 
       <div className='grid grid-cols-1 md:grid-cols-4 gap-6 flex-1'>
         {/* Rooms List */}
-        <div className='hidden md:block md:col-span-1 gap-4 flex flex-col h-full'>
+        <div className='sm:hidden block md:col-span-1 gap-4 md:flex md:flex-col'>
           <h2 className='text-2xl font-medium mb-2'> Rooms</h2>
-          <div className='flex-1 flex flex-col justify-between'>
+          <div className='flex-1 flex flex-col border-r-blue-500 h-full justify-between'>
             <ul className='overflow-y-auto flex-1'>
               {rooms.length > 0 ? (
                 rooms.map((room) => (
@@ -695,7 +695,7 @@ export default function RoomsPage() {
                       )}
 
                       <div className='flex pb-2 justify-between'>
-                        {renderMessage(msg)}{" "}
+                        {renderMessage(msg)} {}
                         {(msg.userId === userId ||
                           isAdmin ||
                           rooms.find((r) => r.id === selectedRoom)?.adminId ===
@@ -854,7 +854,7 @@ export default function RoomsPage() {
               </div>
             </>
           ) : (
-            <div className='flex-1 border rounded p-10 flex items-center justify-center text-gray-500'>
+            <div className='flex-1 rounded p-10 flex items-center justify-center text-gray-500'>
               Select a room to start chatting
             </div>
           )}
