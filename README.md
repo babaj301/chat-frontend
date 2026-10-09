@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chat Frontend
 
-## Getting Started
+A Next.js chat application frontend that connects to a Socket.IO backend for real-time chat rooms.
 
-First, run the development server:
+## Features
+
+- User login with optional admin access
+- Room list with join confirmation and remembered joined rooms
+- Real-time messages via Socket.IO
+- Image uploads in chat
+- Voice message recording and upload
+- Admin message mode and message deletion
+- Simple debug log for socket activity
+
+## Tech stack
+
+- Next.js 15
+- React 19
+- TypeScript
+- Tailwind CSS
+- Socket.IO Client
+- React Icons
+
+## Project structure
+
+- `src/app/rooms/page.tsx` — main chat page and state container
+- `src/app/rooms/components/` — reusable UI components
+- `src/app/rooms/types.ts` — shared room, user, and message types
+- `src/context/SocketContext.tsx` — socket connection provider
+
+## Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the app locally:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+```
 
-## Learn More
+## Notes
 
-To learn more about Next.js, take a look at the following resources:
+This frontend expects a compatible backend API running at `https://chat-backend-gqqw.onrender.com` for:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `/rooms` — room list
+- `/users` — user login
+- `/upload` — image upload
+- `/upload-audio` — voice upload
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+If the backend URL changes, update the fetch endpoints in `src/app/rooms/page.tsx` and `src/app/rooms/components/VoiceMessageButton.tsx`.
