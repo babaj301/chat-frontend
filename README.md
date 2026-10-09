@@ -19,7 +19,6 @@ A Next.js chat application frontend that connects to a Socket.IO backend for rea
 - TypeScript
 - Tailwind CSS
 - Socket.IO Client
-- React Icons
 
 ## Project structure
 
